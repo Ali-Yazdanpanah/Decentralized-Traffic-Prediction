@@ -220,11 +220,41 @@ Artifacts:
 
 ## Systems Performance Overview
 
-![Systems Dashboard](figures/systems_dashboard.jpg)
+![Systems Dashboard](figures/systems_dashboard.png)
 
 This dashboard summarizes the multi-dimensional trade-offs between synchronization frequency, partitioning strategy, and hardware utilization. It serves as a comprehensive profile for deploying STGNN models in resource-constrained fog environments.
 
 From an operational perspective, the Pareto frontier in Section 4 is the key decision driver: it motivates adopting **Low Sync** as the operational recommendation when telemetry reduction is prioritized with only a small final-accuracy penalty.
+
+---
+
+## How to reproduce all figures
+
+```bash
+# 1) Prepare processed data and mappings
+python src/data_utils/1_prepare_data.py
+
+# 2) Build fog partition + topology figure
+python src/federated/1_partition_graph.py
+
+# 3) Train centralized baseline and export history
+python src/models/2_train_baseline.py
+
+# 4) Train federated baseline (main run)
+python src/federated/2_train_federated.py
+
+# 5) Partitioning ablation (Random/Spectral/Fluid)
+python src/federated/3_ablation_partitioning.py
+
+# 6) Systems ablation (sync strategies + systems partition CSVs)
+python src/federated/4_systems_ablation.py
+
+# 7) Standard and systems visualizations
+python src/4_visualize_results.py
+
+# 8) Executive-summary plots (Pareto + spatial error)
+python src/5_executive_summary_plots.py
+```
 
 ---
 
@@ -246,6 +276,7 @@ From an operational perspective, the Pareto frontier in Section 4 is the key dec
 | `src/federated/3_ablation_partitioning.py` | Random vs. spectral vs. fluid partition ablation + `partitioning_ablation` logs/figure |
 | `src/federated/4_systems_ablation.py` | MPS/CPU systems timing ablation (1/3/10 local epochs) + `systems_ablation` logs/figure |
 | `src/4_visualize_results.py` | Figures for this README |
+| `src/5_executive_summary_plots.py` | Pareto and spatial error executive plots (`pareto_efficiency`, `spatial_error_distribution`) |
 | `figures/` | Plots (tracked in git for documentation) |
 
 **Requirements:** see `requirements.txt` (`torch`, `torch_geometric`, `pandas`, …).
