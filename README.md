@@ -261,7 +261,7 @@ python src/5_executive_summary_plots.py
 ## 5. Future work
 
 - **Graph Attention (GAT):** Replace or augment the GCN with a **GAT** layer to let each node **attend** over its neighborhood with learned weights. We expect this may **narrow the gap** between federated and centralized test error on challenging PoPs.
-- **Asynchronous federated learning:** This repo sets the stage for **async FL**, where **fast** zones do not block on a **straggler** in every round—further **reducing wall-clock** and **tail latency** in the GÉANT fog control plane, especially if zones differ in size or backhaul. Combined with the **already balanced** fluid communities split, that is a natural “PhD hook” for the next design iteration.
+- **Asynchronous federated learning:** This repo sets the stage for **async FL**, where **fast** zones do not block on a **straggler** in every round—further **reducing wall-clock** and **tail latency** in the GÉANT fog control plane, especially if zones differ in size or backhaul. Combined with the **already balanced** fluid communities split, that is a natural level up for the next design iteration.
 
 ---
 
