@@ -210,12 +210,277 @@ def _final_losses() -> tuple[float, float, float]:
     return c_t, c_tr, f_t
 
 
+def _set_plot_style() -> None:
+    for st in ("seaborn-v0_8-whitegrid", "seaborn-whitegrid", "default"):
+        if st in plt.style.available or st == "default":
+            plt.style.use(st)
+            break
+
+
+def task3_partitioning_systems_curves() -> None:
+    """
+    Visualize partitioning ablation from systems run (fixed local epochs).
+    """
+    p = LOGS / "systems_partitioning_ablation.csv"
+    if not p.is_file():
+        print(f"Skip systems partitioning curve: missing {p}")
+        return
+    df = pd.read_csv(p)
+    baseline = None
+    cb = LOGS / "centralized_baseline.csv"
+    if cb.is_file():
+        c = pd.read_csv(cb)
+        baseline = float(c["test_loss"].iloc[-1])
+
+    _set_plot_style()
+    fig, ax = plt.subplots(figsize=(8.2, 5.2), dpi=150)
+    rounds = df["Round"].values
+    ax.plot(
+        rounds,
+        df["Random_Partition_Test_Loss"].values,
+        color="C1",
+        linewidth=2.0,
+        label="Random Partition",
+    )
+    ax.plot(
+        rounds,
+        df["Spectral_Min_Cut_Test_Loss"].values,
+        color="C2",
+        linewidth=2.0,
+        label="Spectral (Min-Cut)",
+    )
+    ax.plot(
+        rounds,
+        df["Fluid_Balanced_Test_Loss"].values,
+        color="C0",
+        linewidth=2.0,
+        label="Fluid (Balanced)",
+    )
+    if baseline is not None:
+        ax.axhline(
+            y=baseline,
+            color="0.35",
+            linestyle="--",
+            linewidth=1.8,
+            label="Centralized baseline (test MSE target)",
+        )
+    ax.set_xlabel("Communication round")
+    ax.set_ylabel("Global test MSE")
+    ax.set_title("Systems run: partitioning impact at fixed sync (3 epochs/round)")
+    ax.legend(loc="best", fontsize=9, frameon=True)
+    fig.tight_layout()
+    out = FIGURES / "systems_partitioning_curve.png"
+    fig.savefig(out, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: {out}")
+
+
+def task4_sync_time_breakdown() -> None:
+    """
+    Stacked bar chart for systems sync strategies:
+    data+transfer vs local training vs FedAvg sync.
+    """
+    p = LOGS / "systems_ablation_summary.csv"
+    if not p.is_file():
+        print(f"Skip sync time breakdown: missing {p}")
+        return
+    df = pd.read_csv(p)
+    _set_plot_style()
+    fig, ax = plt.subplots(figsize=(8.2, 5.2), dpi=150)
+    x = np.arange(len(df))
+    w = 0.65
+    data_t = df["Data_Load_Transfer_s"].values
+    train_t = df["Local_Training_s"].values
+    sync_t = df["FedAvg_Sync_s"].values
+    ax.bar(x, data_t, width=w, color="C4", label="Data load + transfer")
+    ax.bar(x, train_t, width=w, bottom=data_t, color="C0", label="Local training compute")
+    ax.bar(x, sync_t, width=w, bottom=data_t + train_t, color="C3", label="FedAvg synchronization")
+    ax.set_xticks(x)
+    ax.set_xticklabels(df["Strategy"].tolist(), rotation=12, ha="right")
+    ax.set_ylabel("Wall-clock time (s)")
+    ax.set_title("Systems timing breakdown by sync strategy")
+    ax.legend(loc="upper left", fontsize=9, frameon=True)
+    fig.tight_layout()
+    out = FIGURES / "systems_sync_timing_breakdown.png"
+    fig.savefig(out, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: {out}")
+
+
+def task5_partition_timing_breakdown() -> None:
+    """
+    Compare timing by partition strategy (fixed local epochs in systems run).
+    """
+    p = LOGS / "systems_partitioning_ablation_timing.csv"
+    if not p.is_file():
+        print(f"Skip partition timing breakdown: missing {p}")
+        return
+    df = pd.read_csv(p)
+    _set_plot_style()
+    fig, ax = plt.subplots(figsize=(8.2, 5.2), dpi=150)
+    x = np.arange(len(df))
+    w = 0.65
+    data_t = df["Data_Load_Transfer_s"].values
+    train_t = df["Local_Training_s"].values
+    sync_t = df["FedAvg_Sync_s"].values
+    ax.bar(x, data_t, width=w, color="C4", label="Data load + transfer")
+    ax.bar(x, train_t, width=w, bottom=data_t, color="C0", label="Local training compute")
+    ax.bar(x, sync_t, width=w, bottom=data_t + train_t, color="C3", label="FedAvg synchronization")
+    ax.set_xticks(x)
+    ax.set_xticklabels(df["Strategy"].tolist(), rotation=12, ha="right")
+    ax.set_ylabel("Wall-clock time (s)")
+    ax.set_title("Systems timing breakdown by partition strategy (3 epochs/round)")
+    ax.legend(loc="upper left", fontsize=9, frameon=True)
+    fig.tight_layout()
+    out = FIGURES / "systems_partitioning_timing_breakdown.png"
+    fig.savefig(out, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: {out}")
+
+
+def task6_systems_dashboard() -> None:
+    """
+    2x2 dashboard for system-focused ablation outputs.
+    Panels:
+      (1) Sync strategy loss vs elapsed time
+      (2) Sync strategy timing breakdown
+      (3) Partition strategy loss vs round (fixed local epochs)
+      (4) Partition strategy timing breakdown
+    """
+    p_sync_curve = LOGS / "systems_ablation_roundwise.csv"
+    p_sync_timing = LOGS / "systems_ablation_summary.csv"
+    p_part_curve = LOGS / "systems_partitioning_ablation.csv"
+    p_part_timing = LOGS / "systems_partitioning_ablation_timing.csv"
+    missing = [
+        str(p)
+        for p in (p_sync_curve, p_sync_timing, p_part_curve, p_part_timing)
+        if not p.is_file()
+    ]
+    if missing:
+        print(f"Skip systems dashboard; missing: {', '.join(missing)}")
+        return
+
+    df_sync_curve = pd.read_csv(p_sync_curve)
+    df_sync_timing = pd.read_csv(p_sync_timing)
+    df_part_curve = pd.read_csv(p_part_curve)
+    df_part_timing = pd.read_csv(p_part_timing)
+
+    baseline = None
+    cb = LOGS / "centralized_baseline.csv"
+    if cb.is_file():
+        c = pd.read_csv(cb)
+        baseline = float(c["test_loss"].iloc[-1])
+
+    _set_plot_style()
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10), dpi=160)
+    ax1, ax2, ax3, ax4 = axes.flatten()
+
+    # (1) sync loss vs elapsed time
+    sync_colors = {
+        "High Sync (1 epoch/round)": "C3",
+        "Medium Sync (3 epochs/round)": "C0",
+        "Low Sync (10 epochs/round)": "C2",
+    }
+    for strategy, dfi in df_sync_curve.groupby("Strategy"):
+        dfi = dfi.sort_values("Round")
+        ax1.plot(
+            dfi["Elapsed_s"].values,
+            dfi["Test_Loss"].values,
+            label=strategy,
+            linewidth=2.0,
+            color=sync_colors.get(strategy, None),
+        )
+    if baseline is not None:
+        ax1.axhline(
+            y=baseline,
+            color="0.35",
+            linestyle="--",
+            linewidth=1.5,
+            label="Centralized baseline",
+        )
+    ax1.set_title("A) Sync strategies: loss vs elapsed time")
+    ax1.set_xlabel("Elapsed wall-clock time (s)")
+    ax1.set_ylabel("Global test MSE")
+    ax1.legend(fontsize=8, frameon=True, loc="best")
+
+    # (2) sync timing breakdown
+    x = np.arange(len(df_sync_timing))
+    w = 0.6
+    data_t = df_sync_timing["Data_Load_Transfer_s"].values
+    train_t = df_sync_timing["Local_Training_s"].values
+    sync_t = df_sync_timing["FedAvg_Sync_s"].values
+    ax2.bar(x, data_t, width=w, color="C4", label="Data+transfer")
+    ax2.bar(x, train_t, width=w, bottom=data_t, color="C0", label="Local compute")
+    ax2.bar(x, sync_t, width=w, bottom=data_t + train_t, color="C3", label="FedAvg sync")
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(df_sync_timing["Strategy"].tolist(), rotation=12, ha="right")
+    ax2.set_ylabel("Wall-clock time (s)")
+    ax2.set_title("B) Sync strategies: timing breakdown")
+    ax2.legend(fontsize=8, frameon=True, loc="upper left")
+
+    # (3) partition loss vs round
+    rounds = df_part_curve["Round"].values
+    ax3.plot(
+        rounds,
+        df_part_curve["Random_Partition_Test_Loss"].values,
+        color="C1",
+        linewidth=2.0,
+        label="Random",
+    )
+    ax3.plot(
+        rounds,
+        df_part_curve["Spectral_Min_Cut_Test_Loss"].values,
+        color="C2",
+        linewidth=2.0,
+        label="Spectral (Min-Cut)",
+    )
+    ax3.plot(
+        rounds,
+        df_part_curve["Fluid_Balanced_Test_Loss"].values,
+        color="C0",
+        linewidth=2.0,
+        label="Fluid (Balanced)",
+    )
+    if baseline is not None:
+        ax3.axhline(y=baseline, color="0.35", linestyle="--", linewidth=1.5, label="Centralized baseline")
+    ax3.set_title("C) Partitions @ 3 epochs/round: loss vs round")
+    ax3.set_xlabel("Communication round")
+    ax3.set_ylabel("Global test MSE")
+    ax3.legend(fontsize=8, frameon=True, loc="best")
+
+    # (4) partition timing breakdown
+    x2 = np.arange(len(df_part_timing))
+    dt = df_part_timing["Data_Load_Transfer_s"].values
+    tr = df_part_timing["Local_Training_s"].values
+    sy = df_part_timing["FedAvg_Sync_s"].values
+    ax4.bar(x2, dt, width=w, color="C4", label="Data+transfer")
+    ax4.bar(x2, tr, width=w, bottom=dt, color="C0", label="Local compute")
+    ax4.bar(x2, sy, width=w, bottom=dt + tr, color="C3", label="FedAvg sync")
+    ax4.set_xticks(x2)
+    ax4.set_xticklabels(df_part_timing["Strategy"].tolist(), rotation=12, ha="right")
+    ax4.set_ylabel("Wall-clock time (s)")
+    ax4.set_title("D) Partition strategies: timing breakdown")
+    ax4.legend(fontsize=8, frameon=True, loc="upper left")
+
+    fig.suptitle("Systems Dashboard: Federated STGNN (MPS run)", fontsize=14, y=0.995)
+    fig.tight_layout()
+    out = FIGURES / "systems_dashboard.png"
+    fig.savefig(out, dpi=220, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved: {out}")
+
+
 def main() -> None:
+    FIGURES.mkdir(parents=True, exist_ok=True)
     task1_convergence()
     try:
         task2_traffic_sample()
     except Exception as e:
         print(f"Task 2 error: {e}", flush=True)
+    task3_partitioning_systems_curves()
+    task4_sync_time_breakdown()
+    task5_partition_timing_breakdown()
+    task6_systems_dashboard()
     c_test, _c_tr, f_test = _final_losses()
     print(
         f"Summary — Centralized test MSE: {c_test:.6f} | Federated test MSE: {f_test:.6f}",

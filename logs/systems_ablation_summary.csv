@@ -1,0 +1,4 @@
+Strategy,Local_Epochs,Final_MSE,Total_Time_s,Data_Load_Transfer_s,Local_Training_s,FedAvg_Sync_s,Estimated_Bandwidth_Savings_pct
+High Sync (1 epoch/round),1,0.01172872,225.4478,47.7061,167.5952,0.0141,0.00
+Medium Sync (3 epochs/round),3,0.01097244,633.7225,136.0546,487.8750,0.0122,66.67
+Low Sync (10 epochs/round),10,0.01012565,2146.7789,457.7418,1679.1144,0.0121,90.00

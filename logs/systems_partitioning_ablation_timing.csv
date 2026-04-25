@@ -1,0 +1,4 @@
+Strategy,Local_Epochs,Final_MSE,Total_Time_s,Data_Load_Transfer_s,Local_Training_s,FedAvg_Sync_s
+Random Partition,3,0.01245645,672.6255,135.3879,527.0969,0.0081
+Spectral (Min-Cut),3,0.00975953,732.6364,165.8722,553.8838,0.0088
+Fluid (Balanced),3,0.01093625,771.0707,215.8887,536.7189,0.0062
